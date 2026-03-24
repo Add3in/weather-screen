@@ -17,7 +17,7 @@ body {
 }
 
 h1 {
-  font-size: 16px;
+  font-size: 18px;
   margin: 0 0 5px 0;
   line-height: 1.1;
 }
@@ -31,7 +31,7 @@ h1 {
 }
 
 .date {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
   margin-bottom: 4px;
 }
@@ -59,7 +59,6 @@ h1 {
 <div id="day-container"></div>
 
 <script>
-// Ikoner
 const icons = {
   0:"☀️",1:"🌤️",2:"⛅",3:"☁️",
   45:"🌫️",48:"🌫️",
@@ -70,30 +69,28 @@ const icons = {
   95:"⛈️",96:"⛈️",99:"⛈️"
 };
 
-// Ladda realtidstemperatur från lokal JSON (skapad av workflow)
-let currentTemp = null;
-let currentIcon = null;
+// ---- Ladda realtid från current.json ----
+let currentData = null;
 
 fetch("data/current.json")
   .then(r => r.json())
   .then(c => {
-    currentTemp = c.temperature;
-    currentIcon = icons[c.code] || "❓";
+    currentData = c;
   });
 
-// Ladda veckovädret
+// ---- Ladda veckan ----
 fetch("data/weather.json")
   .then(r => r.json())
   .then(days => {
 
-    // FILTRERA BORT DAGAR SOM HAR PASSERAT
+    // Filtrera bort dagar som passerat
     const today = new Date().toLocaleDateString("sv-SE", { weekday: "long" }).toUpperCase();
     const order = ["MÅNDAG","TISDAG","ONSDAG","TORSDAG","FREDAG","LÖRDAG","SÖNDAG"];
     days = days.filter(d => order.indexOf(d.day) >= order.indexOf(today));
 
     const cont = document.getElementById("day-container");
 
-    // Skapa dagkort
+    // Skapa väderkort
     days.forEach((d, idx) => {
       const div = document.createElement("div");
       div.className = "day" + (idx === 0 ? " active" : "");
@@ -102,31 +99,35 @@ fetch("data/weather.json")
         <div class="date">${d.day}</div>
         <div class="icon">${icons[d.code] || "❓"}</div>
         <div class="temp">Max ${d.max}°C • Min ${d.min}°C</div>
-        <div class="current" id="cur-${idx}"></div>
+        <div class="current" id="cur-${idx}">Laddar...</div>
       `;
 
       cont.appendChild(div);
     });
 
-    // Lägg in “Just nu” i varje dag när currentTemp har laddats
-    const waitForCurrent = setInterval(() => {
-      if (currentTemp !== null) {
-        days.forEach((d, idx) => {
-          document.getElementById(`cur-${idx}`).innerHTML =
-            `Just nu: ${currentTemp}°C ${currentIcon}`;
-        });
-        clearInterval(waitForCurrent);
-      }
+    // Skriv in “Just nu”-temp i alla kort när JSON laddats
+    const wait = setInterval(() => {
+      if (!currentData) return; // vänta tills current.json har laddats
+
+      days.forEach((d, idx) => {
+        const icon = icons[currentData.code] || "❓";
+        document.getElementById(`cur-${idx}`).innerHTML =
+          `Just nu: ${currentData.temperature}°C ${icon}`;
+      });
+
+      clearInterval(wait);
     }, 100);
 
     // Carousel
     let i = 0;
     setInterval(() => {
       const all = document.querySelectorAll(".day");
-      if (all.length === 0) return;
+      if (all.length < 2) return;
+
       all[i].classList.remove("active");
       i = (i + 1) % all.length;
       all[i].classList.add("active");
+
     }, 6000);
   });
 </script>
