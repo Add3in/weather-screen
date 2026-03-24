@@ -65,18 +65,24 @@ jobs:
         EOF
 
     # --- COMMIT OCH PUSH ---
-    - name: Commit and push
+
+    - name: Commit and push safely
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
 
-        git add data/weather.json
-        git add data/current.json
+        git add data/weather.json || true
+        git add data/current.json || true
 
+        # Om inget att committa — avsluta utan fel
         if git diff --cached --quiet; then
-          echo "Inga ändringar att committa."
+          echo "Inga ändringar att committa — OK."
           exit 0
         fi
 
-        git commit -m "Updated weather & current JSON"
-        git push
+        # Försök committa
+        git commit -m "Updated weather & current JSON" || exit 0
+
+        # Försök pusha, men krascha INTE om Pages låser push
+        git push || echo "Push misslyckades denna gång men det är OK."
+
