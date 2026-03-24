@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -16,17 +15,36 @@ body {
   text-align: center;
   overflow: hidden;
 }
+
 h1 {
   font-size: 18px;
   margin: 0 0 5px 0;
   line-height: 1.1;
 }
-.day { display:none; }
-.day.active { display:block; }
-.date { font-size:20px; font-weight:bold; margin-bottom:4px; }
-.icon { font-size:40px; margin:4px 0; }
-.temp { font-size:18px; margin-top:3px; }
-.current { font-size:16px; margin-top:2px; }
+
+.day {
+  display: none;
+}
+
+.day.active {
+  display: block;
+}
+
+.date {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.icon {
+  font-size: 40px;
+  margin: 4px 0;
+}
+
+.temp {
+  font-size: 18px;
+  margin-top: 3px;
+}
 </style>
 </head>
 
@@ -36,6 +54,7 @@ h1 {
 <div id="day-container"></div>
 
 <script>
+// Ikoner
 const icons = {
   0:"☀️",1:"🌤️",2:"⛅",3:"☁️",
   45:"🌫️",48:"🌫️",
@@ -46,42 +65,34 @@ const icons = {
   95:"⛈️",96:"⛈️",99:"⛈️"
 };
 
-Promise.all([
-  fetch("data/weather.json?fresh=" + Date.now()).then(r => r.json()),
-  fetch("data/current.json?fresh=" + Date.now()).then(r => r.json())
-])
-.then(([days, current]) => {
+fetch("data/weather.json?fresh=" + Date.now())
+  .then(r => r.json())
+  .then(days => {
+    // Filtrera bort passerade dagar
+    const today = new Date().toLocaleDateString("sv-SE", { weekday: "long" }).toUpperCase();
+    const order = ["MÅNDAG","TISDAG","ONSDAG","TORSDAG","FREDAG","LÖRDAG","SÖNDAG"];
+    let filtered = days.filter(d => order.indexOf(d.day) >= order.indexOf(today));
 
-  const today = new Date().toLocaleDateString("sv-SE", { weekday:"long" }).toUpperCase();
-  const order = ["MÅNDAG","TISDAG","ONSDAG","TORSDAG","FREDAG","LÖRDAG","SÖNDAG"];
-  let filtered = days.filter(d => order.indexOf(d.day) >= order.indexOf(today));
-  if (filtered.length === 0) filtered = days;
+    // Om allt skulle filtreras bort → visa hela veckan
+    if (filtered.length === 0) filtered = days;
 
-  const cont = document.getElementById("day-container");
-  const currentIcon = icons[current.code] || "❓";
+    const cont = document.getElementById("day-container");
 
-  filtered.forEach((d, idx) => {
-    const div = document.createElement("div");
-    div.className = "day" + (idx===0 ? " active" : "");
-    div.innerHTML = `
-      <div class="date">${d.day}</div>
-      <div class="icon">${icons[d.code] || "❓"}</div>
-      <div class="temp">Max ${d.max}°C • Min ${d.min}°C</div>
-      <div class="current">Just nu: ${current.temperature}°C ${currentIcon}</div>
-    `;
-    cont.appendChild(div);
-  });
+    // Skapa dagkort
+    filtered.forEach((d, idx) => {
+      const div = document.createElement("div");
+      div.className = "day" + (idx === 0 ? " active" : "");
+      div.innerHTML = `
+        <div class="date">${d.day}</div>
+        <div class="icon">${icons[d.code] || "❓"}</div>
+        <div class="temp">Max ${d.max}°C • Min ${d.min}°C</div>
+      `;
+      cont.appendChild(div);
+    });
 
-  let i=0;
-  setInterval(()=>{
-    const all = document.querySelectorAll(".day");
-    if (all.length<2) return;
-    all[i].classList.remove("active");
-    i = (i+1)%all.length;
-    all[i].classList.add("active");
-  }, 6000);
-});
-</script>
-
-</body>
-</html>
+    // Carousel: en dag i taget
+    let i = 0;
+    setInterval(() => {
+      const all = document.querySelectorAll(".day");
+      if (all.length < 2) return;
+      all[i].classList.remove("active");
