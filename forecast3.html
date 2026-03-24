@@ -31,7 +31,7 @@ h1 {
 }
 
 .date {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
   margin-bottom: 4px;
 }
@@ -44,6 +44,11 @@ h1 {
 .temp {
   font-size: 18px;
   margin-top: 3px;
+}
+
+.current {
+  font-size: 16px;
+  margin-top: 2px;
 }
 </style>
 </head>
@@ -65,31 +70,56 @@ const icons = {
   95:"⛈️",96:"⛈️",99:"⛈️"
 };
 
+// Ladda realtidstemperatur från lokal JSON (skapad av workflow)
+let currentTemp = null;
+let currentIcon = null;
+
+fetch("data/current.json")
+  .then(r => r.json())
+  .then(c => {
+    currentTemp = c.temperature;
+    currentIcon = icons[c.code] || "❓";
+  });
+
+// Ladda veckovädret
 fetch("data/weather.json")
   .then(r => r.json())
   .then(days => {
 
-    // --- FILTRERING AV DAGAR SOM REDAN HAR PASSERAT ---
+    // FILTRERA BORT DAGAR SOM HAR PASSERAT
     const today = new Date().toLocaleDateString("sv-SE", { weekday: "long" }).toUpperCase();
     const order = ["MÅNDAG","TISDAG","ONSDAG","TORSDAG","FREDAG","LÖRDAG","SÖNDAG"];
-
     days = days.filter(d => order.indexOf(d.day) >= order.indexOf(today));
 
     const cont = document.getElementById("day-container");
 
-    // Skapa dagkomponenter
+    // Skapa dagkort
     days.forEach((d, idx) => {
       const div = document.createElement("div");
       div.className = "day" + (idx === 0 ? " active" : "");
+
       div.innerHTML = `
         <div class="date">${d.day}</div>
         <div class="icon">${icons[d.code] || "❓"}</div>
         <div class="temp">Max ${d.max}°C • Min ${d.min}°C</div>
+        <div class="current" id="cur-${idx}"></div>
       `;
+
       cont.appendChild(div);
     });
 
-    // Bildspel
+    // Lägg in “Just nu” i varje dag när currentTemp har laddats
+    const waitForCurrent = setInterval(() => {
+      if (currentTemp !== null) {
+        days.forEach((d, idx) => {
+          document.getElementById(`cur-${idx}`).innerHTML =
+            `Just nu: ${currentTemp}°C ${currentIcon}`;
+        });
+        clearInterval(waitForCurrent);
+      }
+    }, 100);
+
+    // Carousel
     let i = 0;
     setInterval(() => {
       const all = document.querySelectorAll(".day");
