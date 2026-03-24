@@ -1,0 +1,82 @@
+name: Update Weather JSON (Hourly)
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # varje hel timme
+  workflow_dispatch:
+
+jobs:
+  update-weather:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "18"
+
+    # --- HÄMTA VECKOVÄDER ---
+    - name: Fetch weekly forecast
+      run: |
+        curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.3293&longitude=18.0686&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto" \
+        -o rawweather.json
+
+    - name: Build weather.json
+      run: |
+        node << 'EOF'
+        const fs = require("fs");
+        const data = JSON.parse(fs.readFileSync("rawweather.json"));
+
+        const result = data.daily.time.map((date, i) => ({
+          day: new Date(date).toLocaleDateString("sv-SE", { weekday: "long" }).toUpperCase(),
+          max: Math.round(data.daily.temperature_2m_max[i]),
+          min: Math.round(data.daily.temperature_2m_min[i]),
+          code: data.daily.weathercode[i]
+        }));
+
+        fs.mkdirSync("data", { recursive: true });
+        fs.writeFileSync("data/weather.json", JSON.stringify(result, null, 2));
+        EOF
+
+    # --- HÄMTA REALTIDSVÄDER ---
+    - name: Fetch current weather
+      run: |
+        curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.3293&longitude=18.0686&current_weather=true" \
+        -o rawcurrent.json
+
+    - name: Build current.json
+      run: |
+        node << 'EOF'
+        const fs = require("fs");
+        const data = JSON.parse(fs.readFileSync("rawcurrent.json"));
+        const cur = data.current_weather;
+
+        const result = {
+          temperature: cur.temperature,
+          windspeed: cur.windspeed,
+          code: cur.weathercode
+        };
+
+        fs.mkdirSync("data", { recursive: true });
+        fs.writeFileSync("data/current.json", JSON.stringify(result, null, 2));
+        EOF
+
+    # --- COMMIT OCH PUSH ---
+    - name: Commit and push
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+
+        git add data/weather.json
+        git add data/current.json
+
+        if git diff --cached --quiet; then
+          echo "Inga ändringar att committa."
+          exit 0
+        fi
+
+        git commit -m "Updated weather & current JSON"
+        git push
