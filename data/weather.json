@@ -1,1 +1,44 @@
-[]
+[
+  {
+    "day": "FREDAG",
+    "max": 12,
+    "min": -1,
+    "code": 3
+  },
+  {
+    "day": "LÖRDAG",
+    "max": 6,
+    "min": 2,
+    "code": 51
+  },
+  {
+    "day": "SÖNDAG",
+    "max": 9,
+    "min": 1,
+    "code": 51
+  },
+  {
+    "day": "MÅNDAG",
+    "max": 7,
+    "min": 0,
+    "code": 3
+  },
+  {
+    "day": "TISDAG",
+    "max": 7,
+    "min": 1,
+    "code": 51
+  },
+  {
+    "day": "ONSDAG",
+    "max": 11,
+    "min": 0,
+    "code": 3
+  },
+  {
+    "day": "TORSDAG",
+    "max": 11,
+    "min": 2,
+    "code": 3
+  }
+]
