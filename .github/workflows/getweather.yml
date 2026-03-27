@@ -1,8 +1,8 @@
-name: Update Weekly Weather JSON
+name: Update SMHI Daily Weather
 
 on:
   schedule:
-    - cron: "0 * * * *"     # Kör varje hel timme
+    - cron: "0 * * * *"     # varje hel timme
   workflow_dispatch:
 
 jobs:
@@ -18,23 +18,35 @@ jobs:
       with:
         node-version: "18"
 
-    - name: Fetch weekly forecast (Open-Meteo)
+    - name: Fetch SMHI data
       run: |
-        curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.342632&longitude=17.92629&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto" \
-        -o rawweather.json
+        curl -s "https://opendata.smhi.se/api/category/pmp3g/version/2/geotype/point/lon/17.92629/lat/59.342632/data.json" \
+        -o rawsmhi.json
 
-    - name: Build weather.json
+    - name: Build weather.json (today only)
       run: |
         node << 'EOF'
         const fs = require("fs");
-        const data = JSON.parse(fs.readFileSync("rawweather.json"));
+        const raw = JSON.parse(fs.readFileSync("rawsmhi.json"));
+        const series = raw.timeSeries;
 
-        const result = data.daily.time.map((date, i) => ({
-          day: new Date(date).toLocaleDateString("sv-SE", { weekday: "long" }).toUpperCase(),
-          max: Math.round(data.daily.temperature_2m_max[i]),
-          min: Math.round(data.daily.temperature_2m_min[i]),
-          code: data.daily.weathercode[i]
-        }));
+        const today = new Date().toISOString().slice(0, 10);
+        const point = series.find(s => s.validTime.startsWith(today));
+
+        if (!point) {
+          console.log("Ingen SMHI-prognos hittad för idag.");
+          process.exit(1);
+        }
+
+        const params = {};
+        point.parameters.forEach(p => params[p.name] = p.values[0]);
+
+        const result = [{
+          day: today,
+          max: params.tmax ?? params.t,
+          min: params.tmin ?? params.t,
+          code: params.Wsymb2
+        }];
 
         fs.mkdirSync("data", { recursive: true });
         fs.writeFileSync("data/weather.json", JSON.stringify(result, null, 2));
@@ -47,11 +59,10 @@ jobs:
 
         git add data/weather.json || true
 
-        # Om ingen ändring → inget fel
         if git diff --cached --quiet; then
           echo "Inga ändringar att committa."
           exit 0
         fi
 
-        git commit -m "Updated weekly weather"
+        git commit -m "Updated SMHI weather"
         git push || echo "Push misslyckades men workflowet fortsätter."
