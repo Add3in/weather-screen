@@ -1,0 +1,54 @@
+name: Update Weather JSON (Open-Meteo)
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  update-weather:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Fetch data from Open-Meteo
+      run: |
+        curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.34&longitude=17.93&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Europe/Stockholm" -o rawweather.json
+
+    - name: Build weather.json
+      run: |
+        node << 'EOF'
+        const fs = require("fs");
+
+        // Läs Open-Meteo filen
+        const data = JSON.parse(fs.readFileSync("rawweather.json"));
+
+        // Skapa veckodagar
+        const result = data.daily.time.map((date, i) => ({
+          day: new Date(date).toLocaleDateString("sv-SE", { weekday: "long" }).toUpperCase(),
+          max: Math.round(data.daily.temperature_2m_max[i]),
+          min: Math.round(data.daily.temperature_2m_min[i]),
+          code: data.daily.weathercode[i]
+        }));
+
+        // Skriv till data/weather.json
+        fs.mkdirSync("data", { recursive: true });
+        fs.writeFileSync("data/weather.json", JSON.stringify(result, null, 2));
+        EOF
+
+    - name: Commit and push
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+
+        git add data/weather.json || true
+
+        if git diff --cached --quiet; then
+          echo "Inga ändringar att committa."
+          exit 0
+        fi
+
+        git commit -m "Updated weather via Open-Meteo"
+        git push
