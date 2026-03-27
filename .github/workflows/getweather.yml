@@ -18,51 +18,46 @@ jobs:
       with:
         node-version: "18"
 
+    # --- HÄMTA SMHI-PROGNOS ---
     - name: Fetch SMHI data
       run: |
         curl -s "https://opendata.smhi.se/api/category/pmp3g/version/2/geotype/point/lon/17.92629/lat/59.342632/data.json" \
         -o rawsmhi.json
 
-    - name: Build weather.json (today only)
+    # --- KONVERTERA SMHI-PROGNOS TILL EN DAG (IDAG) ---
+    - name: Build weather.json (today only, SMHI)
       run: |
         node << 'EOF'
         const fs = require("fs");
+
+        // Läs SMHI-datan
         const raw = JSON.parse(fs.readFileSync("rawsmhi.json"));
         const series = raw.timeSeries;
 
-        const today = new Date().toISOString().slice(0, 10);
-        const point = series.find(s => s.validTime.startsWith(today));
+        // Hitta första datapunkten FRAMÅT i tiden (mest stabilt för SMHI)
+        const now = new Date();
+        const point = series.find(s => new Date(s.validTime) > now);
 
         if (!point) {
-          console.log("Ingen SMHI-prognos hittad för idag.");
+          console.log("Ingen framtida SMHI-prognos hittad.");
           process.exit(1);
         }
 
+        // Mappa SMHI-parametrar
         const params = {};
-        point.parameters.forEach(p => params[p.name] = p.values[0]);
+        point.parameters.forEach(p => {
+          params[p.name] = p.values[0];
+        });
 
+        // Konstruera format som forecast3.html läser
         const result = [{
-          day: today,
+          day: new Date().toISOString().slice(0, 10),
           max: params.tmax ?? params.t,
           min: params.tmin ?? params.t,
           code: params.Wsymb2
         }];
 
+        // Skriv JSON-filen
         fs.mkdirSync("data", { recursive: true });
         fs.writeFileSync("data/weather.json", JSON.stringify(result, null, 2));
-        EOF
 
-    - name: Commit and push safely
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-
-        git add data/weather.json || true
-
-        if git diff --cached --quiet; then
-          echo "Inga ändringar att committa."
-          exit 0
-        fi
-
-        git commit -m "Updated SMHI weather"
-        git push || echo "Push misslyckades men workflowet fortsätter."
