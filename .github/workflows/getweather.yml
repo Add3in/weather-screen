@@ -2,37 +2,47 @@ name: Update Weather JSON
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"
 
 jobs:
   update-weather:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Fetch weather
+    - name: Fetch weather from Open-Meteo
       run: |
-        curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.34&longitude=17.93&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto" -o rawweather.json
+        curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Europe/Stockholm" -o rawweather.json
 
     - name: Build weather.json
       run: |
         node << 'EOF'
         const fs = require("fs");
         const data = JSON.parse(fs.readFileSync("rawweather.json"));
-        const days = data.daily.time.map((d,i)=>({
+
+        const order = ["MÅNDAG","TISDAG","ONSDAG","TORSDAG","FREDAG","LÖRDAG","SÖNDAG"];
+
+        let days = data.daily.time.map((d,i)=>({
           day: new Date(d).toLocaleDateString("sv-SE",{weekday:"long"}).toUpperCase(),
           max: Math.round(data.daily.temperature_2m_max[i]),
           min: Math.round(data.daily.temperature_2m_min[i]),
           code: data.daily.weathercode[i]
         }));
+
+        // sortera veckodagar i normal svensk ordning
+        days.sort((a,b)=> order.indexOf(a.day) - order.indexOf(b.day));
+
         fs.mkdirSync("data",{recursive:true});
-        fs.writeFileSync("data/weather.json",JSON.stringify(days,null,2));
+        fs.writeFileSync("data/weather.json", JSON.stringify(days,null,2));
         EOF
 
-    - name: Commit
+    - name: Commit changes
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
         git add data/weather.json
-        git commit -m "update" || echo "no changes"
+        git commit -m "Updated weather" || echo "nothing to commit"
         git push
