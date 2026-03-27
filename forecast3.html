@@ -8,34 +8,48 @@
 <style>
 body {
   margin: 0;
-  padding: 5px;
+  padding: 10px;
   font-family: Arial, sans-serif;
+  background: #1e90ff;
   color: white;
   text-align: center;
   overflow: hidden;
-  transition: background 0.5s ease;
 }
 
 h1 {
-  font-size: 16px;
-  margin: 0 0 8px 0;
-  line-height: 1.1;
-}
-
-.date {
-  font-size: 20px;
+  font-size: 22px;
+  margin: 0 0 10px 0;
   font-weight: bold;
-  margin-bottom: 6px;
 }
 
-.icon {
-  font-size: 50px;
-  margin: 6px 0;
+#weather-box {
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(4px);
+  display: inline-block;
 }
 
-.temp {
+.icon-now {
+  font-size: 60px;
+  margin-bottom: 8px;
+}
+
+.temp-now {
+  font-size: 26px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.temp-range {
   font-size: 20px;
   margin-top: 6px;
+}
+
+.day-label {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 12px;
 }
 </style>
 </head>
@@ -43,52 +57,61 @@ h1 {
 <body>
 
 <h1>Dagens väder</h1>
-<div id="weather-today"></div>
+
+<div id="weather-box">
+  <div id="today"></div>
+</div>
 
 <script>
-// Ikoner
+// Ikoner för Open-Meteo weathercode
 const icons = {
-  0:"☀️",1:"🌤️",2:"⛅",3:"☁️",
-  45:"🌫️",48:"🌫️",
-  51:"🌦️",53:"🌦️",55:"🌧️",
-  61:"🌧️",63:"🌧️",65:"🌧️",
-  71:"🌨️",73:"🌨️",75:"❄️",
-  80:"🌦️",81:"🌧️",82:"⛈️",
-  95:"⛈️",96:"⛈️",99:"⛈️"
+  0:"☀️",
+  1:"🌤️",
+  2:"⛅",
+  3:"☁️",
+  45:"🌫️",
+  48:"🌫️",
+  51:"🌦️",
+  53:"🌦️",
+  55:"🌧️",
+  61:"🌧️",
+  63:"🌧️",
+  65:"🌧️",
+  71:"🌨️",
+  73:"🌨️",
+  75:"❄️",
+  80:"🌦️",
+  81:"🌧️",
+  82:"⛈️",
+  95:"⛈️",
+  96:"⛈️",
+  99:"⛈️"
 };
 
-// Bakgrundsfärg beroende på väderkod
-function backgroundFor(code) {
-  if (code === 0) return "#66c0ff"; // sol
-  if (code === 1 || code === 2) return "#4aa0e0"; // lätt moln
-  if (code === 3) return "#3a6d99"; // moln
-  if (code >= 51 && code <= 65) return "#385f7a"; // lätt regn
-  if (code >= 80 && code <= 82) return "#2f4d66"; // kraftigt regn
-  if (code >= 71 && code <= 75) return "#d9e6f2"; // snö
-  if (code >= 95) return "#23384d"; // åska
-  return "#3a6d99";
-}
-
+// 1. Hämta dagens max/min från weather.json
 fetch("data/weather.json?fresh=" + Date.now())
   .then(r => r.json())
   .then(days => {
+    const todayName = new Date().toLocaleDateString("sv-SE", { weekday: "long" }).toUpperCase();
+    let today = days.find(d => d.day === todayName);
 
-    const today = new Date().toLocaleDateString("sv-SE", { weekday: "long" }).toUpperCase();
+    if (!today) today = days[0];
 
-    // Hitta dagens väder från listan
-    let match = days.find(d => d.day === today);
+    // 2. Hämta realtidsväder (current_weather)
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true")
+      .then(r => r.json())
+      .then(now => {
+        const cw = now.current_weather;
+        const nowIcon = icons[cw.weathercode] || "❓";
 
-    // Om API:t ligger en dag före/efter → visa första elementet
-    if (!match) match = days[0];
-
-    // Sätt bakgrund utifrån väderkod
-    document.body.style.background = backgroundFor(match.code);
-
-    document.getElementById("weather-today").innerHTML = `
-      <div class="date">${match.day}</div>
-      <div class="icon">${icons[match.code] || "❓"}</div>
-      <div class="temp">Max ${match.max}°C • Min ${match.min}°C</div>
-    `;
+        // 3. Bygg widgeten
+        document.getElementById("today").innerHTML = `
+          <div class="day-label">${todayName}</div>
+          <div class="icon-now">${nowIcon}</div>
+          <div class="temp-now">Just nu: ${cw.temperature}°C</div>
+          <div class="temp-range">Max ${today.max}° • Min ${today.min}°</div>
+        `;
+      });
   });
 </script>
 
