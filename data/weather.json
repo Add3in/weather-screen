@@ -9,7 +9,7 @@
     "day": "TISDAG",
     "max": 6,
     "min": 2,
-    "code": 51
+    "code": 3
   },
   {
     "day": "ONSDAG",
@@ -31,7 +31,7 @@
   },
   {
     "day": "LÖRDAG",
-    "max": 7,
+    "max": 6,
     "min": 3,
     "code": 51
   },
