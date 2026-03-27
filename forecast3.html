@@ -6,22 +6,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-/* --- RESPONSIV BAS --- */
+/* --- RESPONSIV & MATCHAD BAKGRUND --- */
 html, body {
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
-  ackground: linear-gradient(180deg, #0A7EC2 0%, #0B6EAE 100%);
-  ``
+
+  /* Matchar din SmartSign-layout */
+  background: linear-gradient(180deg, #0A7EC2 0%, #0B6EAE 100%);
+
   height: 100%;
   width: 100%;
   overflow: hidden;
+
   display: flex;
   justify-content: center;
   align-items: flex-start;
 }
 
-/* --- Kontejner som auto-anpassar sig --- */
+/* --- HUVUDBOX MED GLAS-/TRANSPARENS-EFFEKT --- */
 #weather-box {
   width: 95%;
   max-width: 600px;
@@ -33,7 +36,7 @@ html, body {
   box-sizing: border-box;
 }
 
-/* --- Rubrik --- */
+/* --- Rubriken "Dagens väder" --- */
 h1 {
   font-size: clamp(16px, 4vw, 36px);
   margin: 2vw 0;
@@ -41,32 +44,31 @@ h1 {
   text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-/* --- Dagens namn --- */
+/* --- Dagens veckodag --- */
 .day-label {
   font-size: clamp(18px, 4vw, 32px);
   font-weight: bold;
   margin-bottom: 2vw;
 }
 
-/* --- Ikonen (väldigt responsiv) --- */
+/* --- Ikonen som skalar efter behållaren --- */
 .icon-now {
   font-size: clamp(40px, 12vw, 120px);
   margin-bottom: 2vw;
 }
 
-/* --- Temp just nu --- */
+/* --- Just nu-temp --- */
 .temp-now {
   font-size: clamp(18px, 4vw, 32px);
   font-weight: bold;
   margin-bottom: 3vw;
 }
 
-/* --- Max/min --- */
+/* --- Max/min för dagen --- */
 .temp-range {
   font-size: clamp(16px, 3vw, 28px);
   margin-bottom: 1vw;
 }
-
 </style>
 </head>
 
@@ -117,4 +119,3 @@ fetch("data/weather.json?fresh=" + Date.now())
 
 </body>
 </html>
-``
