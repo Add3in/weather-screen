@@ -6,86 +6,86 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body {
+/* --- RESPONSIV BAS --- */
+html, body {
   margin: 0;
-  padding: 10px;
+  padding: 0;
   font-family: Arial, sans-serif;
   background: #1e90ff;
-  color: white;
-  text-align: center;
+  height: 100%;
+  width: 100%;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
-h1 {
-  font-size: 22px;
-  margin: 0 0 10px 0;
-  font-weight: bold;
-}
-
+/* --- Kontejner som auto-anpassar sig --- */
 #weather-box {
-  padding: 10px;
-  border-radius: 16px;
+  width: 95%;
+  max-width: 600px;
   background: rgba(255,255,255,0.15);
-  backdrop-filter: blur(4px);
-  display: inline-block;
+  padding: 3vw;
+  border-radius: 3vw;
+  backdrop-filter: blur(5px);
+  text-align: center;
+  box-sizing: border-box;
 }
 
-.icon-now {
-  font-size: 60px;
-  margin-bottom: 8px;
+/* --- Rubrik --- */
+h1 {
+  font-size: clamp(16px, 4vw, 36px);
+  margin: 2vw 0;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-.temp-now {
-  font-size: 26px;
-  font-weight: bold;
-  margin-bottom: 12px;
-}
-
-.temp-range {
-  font-size: 20px;
-  margin-top: 6px;
-}
-
+/* --- Dagens namn --- */
 .day-label {
-  font-size: 22px;
+  font-size: clamp(18px, 4vw, 32px);
   font-weight: bold;
-  margin-bottom: 12px;
+  margin-bottom: 2vw;
 }
+
+/* --- Ikonen (väldigt responsiv) --- */
+.icon-now {
+  font-size: clamp(40px, 12vw, 120px);
+  margin-bottom: 2vw;
+}
+
+/* --- Temp just nu --- */
+.temp-now {
+  font-size: clamp(18px, 4vw, 32px);
+  font-weight: bold;
+  margin-bottom: 3vw;
+}
+
+/* --- Max/min --- */
+.temp-range {
+  font-size: clamp(16px, 3vw, 28px);
+  margin-bottom: 1vw;
+}
+
 </style>
 </head>
 
 <body>
 
-<h1>Dagens väder</h1>
-
 <div id="weather-box">
+  <h1>Dagens väder</h1>
   <div id="today"></div>
 </div>
 
 <script>
 // Ikoner för Open-Meteo weathercode
 const icons = {
-  0:"☀️",
-  1:"🌤️",
-  2:"⛅",
-  3:"☁️",
-  45:"🌫️",
-  48:"🌫️",
-  51:"🌦️",
-  53:"🌦️",
-  55:"🌧️",
-  61:"🌧️",
-  63:"🌧️",
-  65:"🌧️",
-  71:"🌨️",
-  73:"🌨️",
-  75:"❄️",
-  80:"🌦️",
-  81:"🌧️",
-  82:"⛈️",
-  95:"⛈️",
-  96:"⛈️",
-  99:"⛈️"
+  0:"☀️", 1:"🌤️", 2:"⛅", 3:"☁️",
+  45:"🌫️", 48:"🌫️",
+  51:"🌦️", 53:"🌦️", 55:"🌧️",
+  61:"🌧️", 63:"🌧️", 65:"🌧️",
+  71:"🌨️", 73:"🌨️", 75:"❄️",
+  80:"🌦️", 81:"🌧️", 82:"⛈️",
+  95:"⛈️", 96:"⛈️", 99:"⛈️"
 };
 
 // 1. Hämta dagens max/min från weather.json
@@ -94,20 +94,19 @@ fetch("data/weather.json?fresh=" + Date.now())
   .then(days => {
     const todayName = new Date().toLocaleDateString("sv-SE", { weekday: "long" }).toUpperCase();
     let today = days.find(d => d.day === todayName);
-
     if (!today) today = days[0];
 
-    // 2. Hämta realtidsväder (current_weather)
+    // 2. Hämta realtidsväder
     fetch("https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true")
       .then(r => r.json())
       .then(now => {
         const cw = now.current_weather;
-        const nowIcon = icons[cw.weathercode] || "❓";
+        const icon = icons[cw.weathercode] || "❓";
 
         // 3. Bygg widgeten
         document.getElementById("today").innerHTML = `
           <div class="day-label">${todayName}</div>
-          <div class="icon-now">${nowIcon}</div>
+          <div class="icon-now">${icon}</div>
           <div class="temp-now">Just nu: ${cw.temperature}°C</div>
           <div class="temp-range">Max ${today.max}° • Min ${today.min}°</div>
         `;
@@ -117,3 +116,4 @@ fetch("data/weather.json?fresh=" + Date.now())
 
 </body>
 </html>
+``
