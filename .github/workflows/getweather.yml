@@ -20,7 +20,7 @@ jobs:
 
     - name: Fetch weekly forecast (Open-Meteo)
       run: |
-        curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.3293&longitude=18.0686&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto" \
+        curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.342632&longitude=17.92629&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto" \
         -o rawweather.json
 
     - name: Build weather.json
