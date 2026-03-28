@@ -8,7 +8,7 @@
   {
     "day": "TISDAG",
     "max": 9,
-    "min": 0,
+    "min": 2,
     "code": 3
   },
   {
@@ -32,8 +32,8 @@
   {
     "day": "LÖRDAG",
     "max": 7,
-    "min": 2,
-    "code": 51
+    "min": 0,
+    "code": 3
   },
   {
     "day": "SÖNDAG",
