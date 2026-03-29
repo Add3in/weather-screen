@@ -3,18 +3,18 @@
     "day": "MÅNDAG",
     "max": 6,
     "min": 3,
-    "code": 53
+    "code": 51
   },
   {
     "day": "TISDAG",
     "max": 8,
-    "min": 2,
-    "code": 3
+    "min": 3,
+    "code": 51
   },
   {
     "day": "ONSDAG",
     "max": 13,
-    "min": 3,
+    "min": 2,
     "code": 1
   },
   {
@@ -37,8 +37,8 @@
   },
   {
     "day": "SÖNDAG",
-    "max": 9,
-    "min": 2,
+    "max": 10,
+    "min": 4,
     "code": 51
   }
 ]
