@@ -1,7 +1,7 @@
 [
   {
     "day": "MÅNDAG",
-    "max": 7,
+    "max": 6,
     "min": 4,
     "code": 51
   },
@@ -15,7 +15,7 @@
     "day": "ONSDAG",
     "max": 13,
     "min": 2,
-    "code": 3
+    "code": 1
   },
   {
     "day": "TORSDAG",
@@ -25,19 +25,19 @@
   },
   {
     "day": "FREDAG",
-    "max": 5,
-    "min": 3,
-    "code": 51
+    "max": 6,
+    "min": 2,
+    "code": 3
   },
   {
     "day": "LÖRDAG",
     "max": 7,
-    "min": 4,
+    "min": 2,
     "code": 53
   },
   {
     "day": "SÖNDAG",
-    "max": 10,
+    "max": 9,
     "min": 2,
     "code": 51
   }
