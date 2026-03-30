@@ -1,9 +1,9 @@
 [
   {
     "day": "MÅNDAG",
-    "max": 8,
-    "min": 3,
-    "code": 51
+    "max": 10,
+    "min": 4,
+    "code": 1
   },
   {
     "day": "TISDAG",
@@ -15,7 +15,7 @@
     "day": "ONSDAG",
     "max": 13,
     "min": 2,
-    "code": 1
+    "code": 3
   },
   {
     "day": "TORSDAG",
