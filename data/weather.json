@@ -7,14 +7,14 @@
   },
   {
     "day": "TISDAG",
-    "max": 9,
+    "max": 11,
     "min": 4,
     "code": 51
   },
   {
     "day": "ONSDAG",
     "max": 14,
-    "min": 3,
+    "min": 4,
     "code": 3
   },
   {
