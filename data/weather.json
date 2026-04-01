@@ -1,44 +1,44 @@
 [
   {
     "day": "MÅNDAG",
-    "max": 7,
-    "min": 3,
-    "code": 71
+    "max": 10,
+    "min": 4,
+    "code": 51
   },
   {
     "day": "TISDAG",
-    "max": 5,
-    "min": 2,
+    "max": 8,
+    "min": 3,
     "code": 3
   },
   {
     "day": "ONSDAG",
     "max": 13,
     "min": 1,
-    "code": 1
+    "code": 2
   },
   {
     "day": "TORSDAG",
     "max": 10,
-    "min": 5,
-    "code": 51
+    "min": 6,
+    "code": 53
   },
   {
     "day": "FREDAG",
-    "max": 5,
+    "max": 6,
     "min": 3,
-    "code": 55
+    "code": 53
   },
   {
     "day": "LÖRDAG",
-    "max": 5,
-    "min": 1,
-    "code": 71
+    "max": 6,
+    "min": 2,
+    "code": 73
   },
   {
     "day": "SÖNDAG",
-    "max": 7,
+    "max": 6,
     "min": 0,
-    "code": 71
+    "code": 73
   }
 ]
