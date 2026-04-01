@@ -19,15 +19,15 @@
   },
   {
     "day": "TORSDAG",
-    "max": 9,
-    "min": 6,
+    "max": 10,
+    "min": 5,
     "code": 51
   },
   {
     "day": "FREDAG",
     "max": 5,
-    "min": 2,
-    "code": 53
+    "min": 3,
+    "code": 55
   },
   {
     "day": "LÖRDAG",
