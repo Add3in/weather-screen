@@ -32,13 +32,13 @@
   {
     "day": "LÖRDAG",
     "max": 6,
-    "min": 3,
-    "code": 53
+    "min": 2,
+    "code": 61
   },
   {
     "day": "SÖNDAG",
     "max": 9,
     "min": 2,
-    "code": 61
+    "code": 55
   }
 ]
