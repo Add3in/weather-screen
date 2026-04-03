@@ -26,18 +26,18 @@
   {
     "day": "FREDAG",
     "max": 6,
-    "min": 2,
+    "min": 3,
     "code": 61
   },
   {
     "day": "LÖRDAG",
-    "max": 6,
-    "min": 2,
-    "code": 51
+    "max": 7,
+    "min": 3,
+    "code": 53
   },
   {
     "day": "SÖNDAG",
-    "max": 9,
+    "max": 8,
     "min": 1,
     "code": 61
   }
