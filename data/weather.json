@@ -7,9 +7,9 @@
   },
   {
     "day": "TISDAG",
-    "max": 6,
+    "max": 7,
     "min": 3,
-    "code": 51
+    "code": 3
   },
   {
     "day": "ONSDAG",
@@ -19,15 +19,15 @@
   },
   {
     "day": "TORSDAG",
-    "max": 6,
+    "max": 7,
     "min": -1,
-    "code": 1
+    "code": 3
   },
   {
     "day": "FREDAG",
-    "max": 8,
+    "max": 10,
     "min": -1,
-    "code": 2
+    "code": 3
   },
   {
     "day": "LÖRDAG",
@@ -39,6 +39,6 @@
     "day": "SÖNDAG",
     "max": 8,
     "min": 2,
-    "code": 61
+    "code": 63
   }
 ]
