@@ -7,38 +7,38 @@
   },
   {
     "day": "TISDAG",
-    "max": 7,
+    "max": 6,
     "min": 3,
     "code": 3
   },
   {
     "day": "ONSDAG",
-    "max": 10,
-    "min": 1,
+    "max": 11,
+    "min": 2,
     "code": 3
   },
   {
     "day": "TORSDAG",
-    "max": 7,
-    "min": -1,
+    "max": 8,
+    "min": 0,
     "code": 3
   },
   {
     "day": "FREDAG",
-    "max": 10,
-    "min": -1,
+    "max": 9,
+    "min": 0,
     "code": 3
   },
   {
     "day": "LÖRDAG",
-    "max": 11,
-    "min": -1,
+    "max": 10,
+    "min": 1,
     "code": 3
   },
   {
     "day": "SÖNDAG",
     "max": 8,
     "min": 2,
-    "code": 63
+    "code": 61
   }
 ]
