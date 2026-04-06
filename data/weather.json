@@ -1,14 +1,14 @@
 [
   {
     "day": "MÅNDAG",
-    "max": 7,
+    "max": 10,
     "min": 3,
-    "code": 51
+    "code": 2
   },
   {
     "day": "TISDAG",
-    "max": 6,
-    "min": 3,
+    "max": 7,
+    "min": 4,
     "code": 51
   },
   {
