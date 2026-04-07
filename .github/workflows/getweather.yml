@@ -16,21 +16,33 @@ jobs:
     - name: Prepare data folder
       run: mkdir -p data
 
-    # --- DAGSVÄDER (MAX / MIN) ---
+    # --- DAGSVÄDER ---
     - name: Download daily forecast
       run: |
-        curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s \
-        "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&daily=temperature_2m_max,temperature_2m_min&timezone=Europe/Stockholm" \
-        > data/raw_daily.json
+        curl -4 -sS \
+          --http1.1 \
+          --tlsv1.2 \
+          --retry 5 \
+          --retry-delay 3 \
+          --connect-timeout 20 \
+          -k \
+          "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&daily=temperature_2m_max,temperature_2m_min&timezone=Europe/Stockholm" \
+          > data/raw_daily.json
 
     # --- REALTIDSVÄDER ---
     - name: Download current weather
       run: |
-        curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s \
-        "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true" \
-        > data/raw_current.json
+        curl -4 -sS \
+          --http1.1 \
+          --tlsv1.2 \
+          --retry 5 \
+          --retry-delay 3 \
+          --connect-timeout 20 \
+          -k \
+          "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true" \
+          > data/raw_current.json
 
-    # --- BYGG JSON MED PYTHON (UTAN locale) ---
+    # --- BYGG JSON ---
     - name: Build weather.json and current.json
       run: |
         python3 << 'EOF'
