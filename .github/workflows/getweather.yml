@@ -2,7 +2,7 @@ name: Update weather data
 
 on:
   schedule:
-    - cron: "0 * * * *"    # varje hel timme
+    - cron: "0 * * * *"   # varje hel timme
   workflow_dispatch:
 
 jobs:
@@ -10,44 +10,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
-    # --- VECKOVÄDER (MAX/MIN) ---
+    # --- DAGSVÄDER (MAX/MIN) ---
     - name: Fetch daily forecast
       run: |
-        curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Europe/Stockholm" \
-        | node -e "
-          const fs=require('fs');
-          const d=JSON.parse(fs.readFileSync(0,'utf8'));
-          const days=d.daily.time.map((date,i)=>({
-            day:new Date(date).toLocaleDateString('sv-SE',{weekday:'long'}).toUpperCase(),
-            max:Math.round(d.daily.temperature_2m_max[i]),
-            min:Math.round(d.daily.temperature_2m_min[i])
-          }));
-          fs.mkdirSync('data',{recursive:true});
-          fs.writeFileSync('data/weather.json',JSON.stringify(days,null,2));
-        "
+        curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&daily=temperature_2m_max,temperature_2m_min&timezone=Europe/Stockholm" \
+        | jq '
+          .daily.time as $d
+          | .daily.temperature_2m_max as $max
+          | .daily.temperature_2m_min as $min
+          | [range(0; $d|length) | {
+              day: ($d[.] | strptime("%Y-%m-%d") | strftime("%A") | ascii_upcase),
+              max: ($max[.] | round),
+              min: ($min[.] | round)
+            }]
+        ' > data/weather.json
 
-    # --- REALTIDSVÄDER (JUST NU) ---
+    # --- REALTIDSVÄDER ---
     - name: Fetch current weather
       run: |
         curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true" \
-        | node -e "
-          const fs=require('fs');
-          const d=JSON.parse(fs.readFileSync(0,'utf8'));
-          fs.mkdirSync('data',{recursive:true});
-          fs.writeFileSync('data/current.json',JSON.stringify({
-            temperature:d.current_weather.temperature,
-            code:d.current_weather.weathercode
-          },null,2));
-        "
+        | jq '{
+            temperature: (.current_weather.temperature | round),
+            code: .current_weather.weathercode
+          }' > data/current.json
 
     # --- COMMIT ---
     - name: Commit and push
       run: |
-        git config user.name \"GitHub Actions\"
-        git config user.email \"actions@github.com\"
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
         git add data/weather.json data/current.json
-        git commit -m \"Update weather data\" || echo \"Nothing to commit\"
+        git commit -m "Update weather data" || echo "No changes"
         git push
