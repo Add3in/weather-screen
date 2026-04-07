@@ -2,7 +2,7 @@ name: Update weather data
 
 on:
   schedule:
-    - cron: "0 * * * *"   # varje hel timme
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -13,33 +13,55 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    # ✅ SKAPA data-mappen först (DETTA SAKNADES)
     - name: Prepare data folder
       run: mkdir -p data
 
-    # --- DAGSVÄDER (MAX / MIN) ---
-    - name: Fetch daily forecast
+    # --- HÄMTA DAGSVÄDER (rådata) ---
+    - name: Download daily forecast
       run: |
         curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&daily=temperature_2m_max,temperature_2m_min&timezone=Europe/Stockholm" \
-        | jq '
-          .daily.time as $d
-          | .daily.temperature_2m_max as $max
-          | .daily.temperature_2m_min as $min
-          | [range(0; $d|length) | {
-              day: ($d[.] | strptime("%Y-%m-%d") | strftime("%A") | ascii_upcase),
-              max: ($max[.] | round),
-              min: ($min[.] | round)
-            }]
-        ' > data/weather.json
+        > data/raw_daily.json
 
-    # --- REALTIDSVÄDER ---
-    - name: Fetch current weather
+    # --- HÄMTA REALTIDSVÄDER (rådata) ---
+    - name: Download current weather
       run: |
         curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true" \
-        | jq '{
-            temperature: (.current_weather.temperature | round),
-            code: .current_weather.weathercode
-          }' > data/current.json
+        > data/raw_current.json
+
+    # --- BEARBETA MED PYTHON (SÄKERT) ---
+    - name: Build weather.json and current.json
+      run: |
+        python3 << 'EOF'
+        import json, locale, datetime, os
+
+        locale.setlocale(locale.LC_TIME, "sv_SE.UTF-8")
+
+        with open("data/raw_daily.json") as f:
+            d = json.load(f)
+
+        days = []
+        for i, date in enumerate(d["daily"]["time"]):
+            day = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%A").upper()
+            days.append({
+                "day": day,
+                "max": round(d["daily"]["temperature_2m_max"][i]),
+                "min": round(d["daily"]["temperature_2m_min"][i]),
+            })
+
+        with open("data/weather.json", "w") as f:
+            json.dump(days, f, indent=2, ensure_ascii=False)
+
+        with open("data/raw_current.json") as f:
+            c = json.load(f)
+
+        current = {
+            "temperature": round(c["current_weather"]["temperature"]),
+            "code": c["current_weather"]["weathercode"]
+        }
+
+        with open("data/current.json", "w") as f:
+            json.dump(current, f, indent=2, ensure_ascii=False)
+        EOF
 
     # --- COMMIT ---
     - name: Commit and push
