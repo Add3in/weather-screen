@@ -6,25 +6,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-/* --- RESPONSIV & FAST MATCHAD BAKGRUND --- */
 html, body {
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
-
-  /* Exakt färg från din SmartSign-layout */
   background: #0A76B8;
-
   height: 100%;
   width: 100%;
   overflow: hidden;
-
   display: flex;
   justify-content: center;
   align-items: flex-start;
 }
 
-/* --- HUVUDBOX --- */
 #weather-box {
   width: 95%;
   max-width: 600px;
@@ -34,40 +28,33 @@ html, body {
   backdrop-filter: blur(5px);
   text-align: center;
   box-sizing: border-box;
+  color: white;
 }
 
-/* --- Rubrik --- */
 h1 {
   font-size: clamp(16px, 4vw, 36px);
   margin: 2vw 0;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-/* --- Dagens veckodag --- */
 .day-label {
   font-size: clamp(18px, 4vw, 32px);
   font-weight: bold;
   margin-bottom: 2vw;
 }
 
-/* Ikon */
 .icon-now {
   font-size: clamp(40px, 12vw, 120px);
   margin-bottom: 2vw;
 }
 
-/* Temperatur just nu */
 .temp-now {
   font-size: clamp(18px, 4vw, 32px);
   font-weight: bold;
   margin-bottom: 3vw;
 }
 
-/* Max/min */
 .temp-range {
   font-size: clamp(16px, 3vw, 28px);
-  margin-bottom: 1vw;
 }
 </style>
 </head>
@@ -76,7 +63,7 @@ h1 {
 
 <div id="weather-box">
   <h1>Dagens väder</h1>
-  <div id="today"></div>
+  <div id="today">Laddar väder…</div>
 </div>
 
 <script>
@@ -90,26 +77,45 @@ const icons = {
   95:"⛈️", 96:"⛈️", 99:"⛈️"
 };
 
-fetch("data/weather.json?fresh=" + Date.now())
-  .then(r => r.json())
+// Absolut URL – detta löser felet
+const WEATHER_JSON =
+  "https://add3in.github.io/weather-screen/data/weather.json?fresh=" + Date.now();
+
+// 1. Hämta dagens max/min
+fetch(WEATHER_JSON)
+  .then(res => {
+    if (!res.ok) throw new Error("weather.json laddades inte");
+    return res.json();
+  })
   .then(days => {
-    const todayName = new Date().toLocaleDateString("sv-SE", { weekday: "long" }).toUpperCase();
+    const todayName = new Date()
+      .toLocaleDateString("sv-SE", { weekday: "long" })
+      .toUpperCase();
+
     let today = days.find(d => d.day === todayName);
     if (!today) today = days[0];
 
-    fetch("https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true")
-      .then(r => r.json())
-      .then(now => {
-        const cw = now.current_weather;
-        const icon = icons[cw.weathercode] || "❓";
+    // 2. Hämta realtidsväder
+    return fetch(
+      "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true"
+    ).then(r => r.json()).then(now => {
+      const cw = now.current_weather;
+      const icon = icons[cw.weathercode] || "❓";
 
-        document.getElementById("today").innerHTML = `
-          <div class="day-label">${todayName}</div>
-          <div class="icon-now">${icon}</div>
-          <div class="temp-now">Just nu: ${cw.temperature}°C</div>
-          <div class="temp-range">Max ${today.max}° • Min ${today.min}°</div>
-        `;
-      });
+      document.getElementById("today").innerHTML = `
+        <div class="day-label">${todayName}</div>
+        <div class="icon-now">${icon}</div>
+        <div class="temp-now">Just nu: ${cw.temperature}°C</div>
+        <div class="temp-range">
+          Max ${today.max}° • Min ${today.min}°
+        </div>
+      `;
+    });
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById("today").innerHTML =
+      "Väderdata tillfälligt otillgänglig";
   });
 </script>
 
