@@ -2,11 +2,14 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-<title>Dagens väder</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Väder</title>
 
 <style>
+/* Bas – fyll hela SmartSign-rutan */
 html, body {
+  width: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
   background: #0A76B8;
@@ -14,29 +17,68 @@ html, body {
   color: white;
 }
 
-#box {
-  max-width: 600px;
-  margin: 2vw auto;
-  padding: 3vw;
+/* Kortet fyller hela ytan */
+#card {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 6%;
   background: rgba(255,255,255,0.15);
   border-radius: 24px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Rubrik */
+#title {
+  font-size: 1.2em;
+  font-weight: bold;
   text-align: center;
 }
 
-.icon { font-size: clamp(48px, 10vw, 120px); }
-.temp { font-size: clamp(24px, 4vw, 40px); }
-.range { font-size: clamp(18px, 3vw, 28px); margin-top: 8px; }
-.source { font-size: 12px; opacity: 0.7; margin-top: 6px; }
+/* Ikon */
+#icon {
+  font-size: 3.5em;
+  text-align: center;
+}
+
+/* Temperatur nu */
+#now {
+  font-size: 1.4em;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Max/min */
+#range {
+  font-size: 0.95em;
+  text-align: center;
+  opacity: 0.9;
+}
+
+/* Källa eller feltext */
+#status {
+  font-size: 0.7em;
+  text-align: center;
+  opacity: 0.6;
+}
 </style>
 </head>
 
 <body>
-<div id="box">
-  <h1>Dagens väder</h1>
-  <div id="content">Laddar väder…</div>
+
+<div id="card">
+  <div id="title">Väder</div>
+  <div id="icon">⏳</div>
+  <div id="now">Laddar…</div>
+  <div id="range"> </div>
+  <div id="status"> </div>
 </div>
 
 <script>
+// Ikoner (Open-Meteo/YR-kompatibla)
 const icons = {
   0:"☀️",1:"🌤️",2:"⛅",3:"☁️",
   45:"🌫️",48:"🌫️",
@@ -44,65 +86,36 @@ const icons = {
   80:"🌦️",95:"⛈️"
 };
 
-function show(icon, temp, max, min, source) {
-  document.getElementById("content").innerHTML = `
-    <div class="icon">${icon}</div>
-    <div class="temp">Just nu: ${temp}°C</div>
-    <div class="range">Max ${max}° • Min ${min}°</div>
-    <div class="source">${source}</div>
-  `;
+function show(icon, now, max, min, source) {
+  document.getElementById("icon").textContent = icon;
+  document.getElementById("now").textContent = `Just nu: ${now}°C`;
+  document.getElementById("range").textContent = `Max ${max}° • Min ${min}°`;
+  document.getElementById("status").textContent = source;
 }
 
-// 1️⃣ Försök Open‑Meteo
-fetch(
-  "https://api.open-meteo.com/v1/forecast" +
-  "?latitude=59.33" +
-  "&longitude=18.06" +
-  "&hourly=temperature_2m,weathercode" +
-  "&daily=temperature_2m_max,temperature_2m_min" +
-  "&timezone=Europe/Stockholm"
-)
-.then(r => {
-  if (!r.ok) throw new Error("Open-Meteo nere");
-  return r.json();
-})
-.then(d => {
-  const idx = d.hourly.time.findIndex(t =>
-    t.startsWith(new Date().toISOString().slice(0,13))
-  );
-  show(
-    icons[d.hourly.weathercode[idx]] || "❓",
-    Math.round(d.hourly.temperature_2m[idx]),
-    Math.round(d.daily.temperature_2m_max[0]),
-    Math.round(d.daily.temperature_2m_min[0]),
-    "Källa: Open‑Meteo"
-  );
-})
-.catch(() => {
-
-  // 2️⃣ Fallback: YR / MET Norway (väldigt stabil)
-  fetch("https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=59.33&lon=18.06", {
-    headers: { "User-Agent": "weather-screen" }
-  })
-  .then(r => r.json())
+/* Försök Open‑Meteo hourly (stabilare än current_weather) */
+fetch("https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min&timezone=Europe/Stockholm")
+  .then(r => r.ok ? r.json() : Promise.reject())
   .then(d => {
-    const now = d.properties.timeseries[0];
+    const idx = d.hourly.time.findIndex(t =>
+      t.startsWith(new Date().toISOString().slice(0,13))
+    );
     show(
-      "🌤️",
-      Math.round(now.data.instant.details.air_temperature),
-      Math.round(d.properties.timeseries[0].data.next_6_hours.details.air_temperature_max),
-      Math.round(d.properties.timeseries[0].data.next_6_hours.details.air_temperature_min),
-      "Källa: Yr / MET Norway"
+      icons[d.hourly.weathercode[idx]] || "❓",
+      Math.round(d.hourly.temperature_2m[idx]),
+      Math.round(d.daily.temperature_2m_max[0]),
+      Math.round(d.daily.temperature_2m_min[0]),
+      "Open‑Meteo"
     );
   })
   .catch(() => {
-    document.getElementById("content").innerText =
-      "Väder tillfälligt otillgängligt";
+    document.getElementById("now").textContent = "Väder ej tillgängligt";
+    document.getElementById("status").textContent = "Ingen data";
   });
-});
 
-// Uppdatera var 10:e minut
-setInterval(() => location.reload(), 600000);
+// Auto‑uppdatera var 5:e minut
+setInterval(() => location.reload(), 300000);
 </script>
+
 </body>
 </html>
