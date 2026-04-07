@@ -6,118 +6,55 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  background: #0A76B8;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+html,body{
+  margin:0;
+  padding:0;
+  background:#0A76B8;
+  font-family:Arial,sans-serif;
+  color:white;
 }
-
-#weather-box {
-  width: 95%;
-  max-width: 600px;
-  background: rgba(255,255,255,0.15);
-  padding: 3vw;
-  border-radius: 3vw;
-  backdrop-filter: blur(5px);
-  text-align: center;
-  box-sizing: border-box;
-  color: white;
+#box{
+  max-width:600px;
+  margin:2vw auto;
+  padding:3vw;
+  background:rgba(255,255,255,0.15);
+  border-radius:24px;
+  text-align:center;
 }
-
-h1 {
-  font-size: clamp(16px, 4vw, 36px);
-  margin: 2vw 0;
-}
-
-.day-label {
-  font-size: clamp(18px, 4vw, 32px);
-  font-weight: bold;
-  margin-bottom: 2vw;
-}
-
-.icon-now {
-  font-size: clamp(40px, 12vw, 120px);
-  margin-bottom: 2vw;
-}
-
-.temp-now {
-  font-size: clamp(18px, 4vw, 32px);
-  font-weight: bold;
-  margin-bottom: 3vw;
-}
-
-.temp-range {
-  font-size: clamp(16px, 3vw, 28px);
-}
+.icon{font-size:clamp(48px,10vw,120px);}
+.temp{font-size:clamp(24px,4vw,40px);}
+.range{font-size:clamp(18px,3vw,28px);}
 </style>
 </head>
 
 <body>
-
-<div id="weather-box">
+<div id="box">
   <h1>Dagens väder</h1>
-  <div id="today">Laddar väder…</div>
+  <div id="content">Laddar…</div>
 </div>
 
 <script>
-const icons = {
-  0:"☀️", 1:"🌤️", 2:"⛅", 3:"☁️",
-  45:"🌫️", 48:"🌫️",
-  51:"🌦️", 53:"🌦️", 55:"🌧️",
-  61:"🌧️", 63:"🌧️", 65:"🌧️",
-  71:"🌨️", 73:"🌨️", 75:"❄️",
-  80:"🌦️", 81:"🌧️", 82:"⛈️",
-  95:"⛈️", 96:"⛈️", 99:"⛈️"
+const icons={
+  0:"☀️",1:"🌤️",2:"⛅",3:"☁️",
+  51:"🌦️",61:"🌧️",71:"❄️",
+  80:"🌦️",95:"⛈️"
 };
 
-// Absolut URL – detta löser felet
-const WEATHER_JSON =
-  "https://add3in.github.io/weather-screen/data/weather.json?fresh=" + Date.now();
+Promise.all([
+  fetch("data/weather.json").then(r=>r.json()),
+  fetch("data/current.json").then(r=>r.json())
+]).then(([days,now])=>{
+  const dayName=new Date().toLocaleDateString("sv-SE",{weekday:"long"}).toUpperCase();
+  const today=days.find(d=>d.day===dayName)||days[0];
 
-// 1. Hämta dagens max/min
-fetch(WEATHER_JSON)
-  .then(res => {
-    if (!res.ok) throw new Error("weather.json laddades inte");
-    return res.json();
-  })
-  .then(days => {
-    const todayName = new Date()
-      .toLocaleDateString("sv-SE", { weekday: "long" })
-      .toUpperCase();
-
-    let today = days.find(d => d.day === todayName);
-    if (!today) today = days[0];
-
-    // 2. Hämta realtidsväder
-    return fetch(
-      "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true"
-    ).then(r => r.json()).then(now => {
-      const cw = now.current_weather;
-      const icon = icons[cw.weathercode] || "❓";
-
-      document.getElementById("today").innerHTML = `
-        <div class="day-label">${todayName}</div>
-        <div class="icon-now">${icon}</div>
-        <div class="temp-now">Just nu: ${cw.temperature}°C</div>
-        <div class="temp-range">
-          Max ${today.max}° • Min ${today.min}°
-        </div>
-      `;
-    });
-  })
-  .catch(err => {
-    console.error(err);
-    document.getElementById("today").innerHTML =
-      "Väderdata tillfälligt otillgänglig";
-  });
+  document.getElementById("content").innerHTML=`
+    <div class="icon">${icons[now.code]||"❓"}</div>
+    <div class="temp">Just nu: ${now.temperature}°C</div>
+    <div class="range">Max ${today.max}° • Min ${today.min}°</div>
+  `;
+}).catch(()=>{
+  document.getElementById("content").innerText="Väderdata ej tillgänglig";
+});
 </script>
-
 </body>
 </html>
