@@ -6,24 +6,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-html,body{
-  margin:0;
-  padding:0;
-  background:#0A76B8;
-  font-family:Arial,sans-serif;
-  color:white;
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0A76B8;
+  font-family: Arial, sans-serif;
+  color: white;
 }
-#box{
-  max-width:600px;
-  margin:2vw auto;
-  padding:3vw;
-  background:rgba(255,255,255,0.15);
-  border-radius:24px;
-  text-align:center;
+
+#box {
+  max-width: 600px;
+  margin: 2vw auto;
+  padding: 3vw;
+  background: rgba(255,255,255,0.15);
+  border-radius: 24px;
+  text-align: center;
 }
-.icon{font-size:clamp(48px,10vw,120px);}
-.temp{font-size:clamp(24px,4vw,40px);}
-.range{font-size:clamp(18px,3vw,28px);}
+
+.icon {
+  font-size: clamp(48px, 10vw, 120px);
+}
+
+.temp {
+  font-size: clamp(24px, 4vw, 40px);
+}
+
+.range {
+  font-size: clamp(18px, 3vw, 28px);
+  margin-top: 8px;
+}
 </style>
 </head>
 
@@ -36,28 +47,49 @@ html,body{
 <script>
 const icons = {
   0:"☀️",1:"🌤️",2:"⛅",3:"☁️",
+  45:"🌫️",48:"🌫️",
   51:"🌦️",61:"🌧️",71:"❄️",
   80:"🌦️",95:"⛈️"
 };
 
-function loadWeather(){
-  fetch("https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true&daily=temperature_2m_max,temperature_2m_min&timezone=Europe/Stockholm")
-    .then(r=>r.json())
-    .then(d=>{
-      const today=new Date().toLocaleDateString("sv-SE",{weekday:"long"}).toUpperCase();
-      document.getElementById("content").innerHTML=`
-        <div class="icon">${icons[d.current_weather.weathercode]||"❓"}</div>
-        <div class="temp">Just nu: ${Math.round(d.current_weather.temperature)}°C</div>
-        <div class="range">Max ${Math.round(d.daily.temperature_2m_max[0])}° • Min ${Math.round(d.daily.temperature_2m_min[0])}°</div>
-      `;
-    })
-    .catch(()=>{
-      document.getElementById("content").innerText="Väder ej tillgängligt";
-    });
+function showError(msg) {
+  document.getElementById("content").innerText = msg;
 }
 
-loadWeather();
-setInterval(loadWeather, 300000); // var 5:e minut
+fetch(
+  "https://api.open-meteo.com/v1/forecast" +
+  "?latitude=59.33" +
+  "&longitude=18.06" +
+  "&hourly=temperature_2m,weathercode" +
+  "&daily=temperature_2m_max,temperature_2m_min" +
+  "&timezone=Europe/Stockholm"
+)
+.then(r => {
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+})
+.then(data => {
+  const now = new Date();
+  const index = data.hourly.time.findIndex(t => t.startsWith(now.toISOString().slice(0,13)));
+  const tempNow = Math.round(data.hourly.temperature_2m[index]);
+  const codeNow = data.hourly.weathercode[index];
+
+  document.getElementById("content").innerHTML = `
+    <div class="icon">${icons[codeNow] || "❓"}</div>
+    <div class="temp">Just nu: ${tempNow}°C</div>
+    <div class="range">
+      Max ${Math.round(data.daily.temperature_2m_max[0])}° •
+      Min ${Math.round(data.daily.temperature_2m_min[0])}°
+    </div>
+  `;
+})
+.catch(err => {
+  console.error(err);
+  showError("Väderdata just nu otillgänglig");
+});
+
+// Uppdatera automatiskt var 5:e minut
+setInterval(() => location.reload(), 300000);
 </script>
 </body>
 </html>
