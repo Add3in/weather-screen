@@ -16,52 +16,61 @@ jobs:
     - name: Prepare data folder
       run: mkdir -p data
 
-    # --- DAGSVÄDER ---
+    # --- DAGSVÄDER (MAX / MIN) ---
     - name: Download daily forecast
       run: |
         curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s \
         "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&daily=temperature_2m_max,temperature_2m_min&timezone=Europe/Stockholm" \
         > data/raw_daily.json
 
-    # --- REALTID ---
+    # --- REALTIDSVÄDER ---
     - name: Download current weather
       run: |
         curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s \
         "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true" \
         > data/raw_current.json
 
-    # --- PYTHON (100% STABIL PARSING) ---
+    # --- BYGG JSON MED PYTHON (UTAN locale) ---
     - name: Build weather.json and current.json
       run: |
         python3 << 'EOF'
-        import json, datetime, locale
-        locale.setlocale(locale.LC_TIME, "sv_SE.UTF-8")
+        import json, datetime
 
-        with open("data/raw_daily.json") as f:
-            d=json.load(f)
-
-        days=[]
-        for i, date in enumerate(d["daily"]["time"]):
-            day=datetime.datetime.strptime(date,"%Y-%m-%d").strftime("%A").upper()
-            days.append({
-                "day":day,
-                "max":round(d["daily"]["temperature_2m_max"][i]),
-                "min":round(d["daily"]["temperature_2m_min"][i]),
-            })
-
-        with open("data/weather.json","w") as f:
-            json.dump(days,f,indent=2,ensure_ascii=False)
-
-        with open("data/raw_current.json") as f:
-            c=json.load(f)
-
-        current={
-            "temperature":round(c["current_weather"]["temperature"]),
-            "code":c["current_weather"]["weathercode"]
+        WEEKDAYS = {
+          "Monday": "MÅNDAG",
+          "Tuesday": "TISDAG",
+          "Wednesday": "ONSDAG",
+          "Thursday": "TORSDAG",
+          "Friday": "FREDAG",
+          "Saturday": "LÖRDAG",
+          "Sunday": "SÖNDAG"
         }
 
-        with open("data/current.json","w") as f:
-            json.dump(current,f,indent=2,ensure_ascii=False)
+        with open("data/raw_daily.json") as f:
+            d = json.load(f)
+
+        days = []
+        for i, iso_date in enumerate(d["daily"]["time"]):
+            wd = datetime.datetime.strptime(iso_date, "%Y-%m-%d").strftime("%A")
+            days.append({
+                "day": WEEKDAYS[wd],
+                "max": round(d["daily"]["temperature_2m_max"][i]),
+                "min": round(d["daily"]["temperature_2m_min"][i])
+            })
+
+        with open("data/weather.json", "w") as f:
+            json.dump(days, f, indent=2, ensure_ascii=False)
+
+        with open("data/raw_current.json") as f:
+            c = json.load(f)
+
+        current = {
+            "temperature": round(c["current_weather"]["temperature"]),
+            "code": c["current_weather"]["weathercode"]
+        }
+
+        with open("data/current.json", "w") as f:
+            json.dump(current, f, indent=2, ensure_ascii=False)
         EOF
 
     # --- COMMIT ---
