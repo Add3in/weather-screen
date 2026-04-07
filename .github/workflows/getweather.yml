@@ -16,51 +16,52 @@ jobs:
     - name: Prepare data folder
       run: mkdir -p data
 
-    # --- HÄMTA DAGSVÄDER (rådata) ---
+    # --- DAGSVÄDER ---
     - name: Download daily forecast
       run: |
-        curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&daily=temperature_2m_max,temperature_2m_min&timezone=Europe/Stockholm" \
+        curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s \
+        "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&daily=temperature_2m_max,temperature_2m_min&timezone=Europe/Stockholm" \
         > data/raw_daily.json
 
-    # --- HÄMTA REALTIDSVÄDER (rådata) ---
+    # --- REALTID ---
     - name: Download current weather
       run: |
-        curl -s "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true" \
+        curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s \
+        "https://api.open-meteo.com/v1/forecast?latitude=59.33&longitude=18.06&current_weather=true" \
         > data/raw_current.json
 
-    # --- BEARBETA MED PYTHON (SÄKERT) ---
+    # --- PYTHON (100% STABIL PARSING) ---
     - name: Build weather.json and current.json
       run: |
         python3 << 'EOF'
-        import json, locale, datetime, os
-
+        import json, datetime, locale
         locale.setlocale(locale.LC_TIME, "sv_SE.UTF-8")
 
         with open("data/raw_daily.json") as f:
-            d = json.load(f)
+            d=json.load(f)
 
-        days = []
+        days=[]
         for i, date in enumerate(d["daily"]["time"]):
-            day = datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%A").upper()
+            day=datetime.datetime.strptime(date,"%Y-%m-%d").strftime("%A").upper()
             days.append({
-                "day": day,
-                "max": round(d["daily"]["temperature_2m_max"][i]),
-                "min": round(d["daily"]["temperature_2m_min"][i]),
+                "day":day,
+                "max":round(d["daily"]["temperature_2m_max"][i]),
+                "min":round(d["daily"]["temperature_2m_min"][i]),
             })
 
-        with open("data/weather.json", "w") as f:
-            json.dump(days, f, indent=2, ensure_ascii=False)
+        with open("data/weather.json","w") as f:
+            json.dump(days,f,indent=2,ensure_ascii=False)
 
         with open("data/raw_current.json") as f:
-            c = json.load(f)
+            c=json.load(f)
 
-        current = {
-            "temperature": round(c["current_weather"]["temperature"]),
-            "code": c["current_weather"]["weathercode"]
+        current={
+            "temperature":round(c["current_weather"]["temperature"]),
+            "code":c["current_weather"]["weathercode"]
         }
 
-        with open("data/current.json", "w") as f:
-            json.dump(current, f, indent=2, ensure_ascii=False)
+        with open("data/current.json","w") as f:
+            json.dump(current,f,indent=2,ensure_ascii=False)
         EOF
 
     # --- COMMIT ---
