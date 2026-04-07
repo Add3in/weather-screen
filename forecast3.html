@@ -23,18 +23,10 @@ html, body {
   text-align: center;
 }
 
-.icon {
-  font-size: clamp(48px, 10vw, 120px);
-}
-
-.temp {
-  font-size: clamp(24px, 4vw, 40px);
-}
-
-.range {
-  font-size: clamp(18px, 3vw, 28px);
-  margin-top: 8px;
-}
+.icon { font-size: clamp(48px, 10vw, 120px); }
+.temp { font-size: clamp(24px, 4vw, 40px); }
+.range { font-size: clamp(18px, 3vw, 28px); margin-top: 8px; }
+.source { font-size: 12px; opacity: 0.7; margin-top: 6px; }
 </style>
 </head>
 
@@ -52,10 +44,16 @@ const icons = {
   80:"🌦️",95:"⛈️"
 };
 
-function showError(msg) {
-  document.getElementById("content").innerText = msg;
+function show(icon, temp, max, min, source) {
+  document.getElementById("content").innerHTML = `
+    <div class="icon">${icon}</div>
+    <div class="temp">Just nu: ${temp}°C</div>
+    <div class="range">Max ${max}° • Min ${min}°</div>
+    <div class="source">${source}</div>
+  `;
 }
 
+// 1️⃣ Försök Open‑Meteo
 fetch(
   "https://api.open-meteo.com/v1/forecast" +
   "?latitude=59.33" +
@@ -65,31 +63,46 @@ fetch(
   "&timezone=Europe/Stockholm"
 )
 .then(r => {
-  if (!r.ok) throw new Error("HTTP " + r.status);
+  if (!r.ok) throw new Error("Open-Meteo nere");
   return r.json();
 })
-.then(data => {
-  const now = new Date();
-  const index = data.hourly.time.findIndex(t => t.startsWith(now.toISOString().slice(0,13)));
-  const tempNow = Math.round(data.hourly.temperature_2m[index]);
-  const codeNow = data.hourly.weathercode[index];
-
-  document.getElementById("content").innerHTML = `
-    <div class="icon">${icons[codeNow] || "❓"}</div>
-    <div class="temp">Just nu: ${tempNow}°C</div>
-    <div class="range">
-      Max ${Math.round(data.daily.temperature_2m_max[0])}° •
-      Min ${Math.round(data.daily.temperature_2m_min[0])}°
-    </div>
-  `;
+.then(d => {
+  const idx = d.hourly.time.findIndex(t =>
+    t.startsWith(new Date().toISOString().slice(0,13))
+  );
+  show(
+    icons[d.hourly.weathercode[idx]] || "❓",
+    Math.round(d.hourly.temperature_2m[idx]),
+    Math.round(d.daily.temperature_2m_max[0]),
+    Math.round(d.daily.temperature_2m_min[0]),
+    "Källa: Open‑Meteo"
+  );
 })
-.catch(err => {
-  console.error(err);
-  showError("Väderdata just nu otillgänglig");
+.catch(() => {
+
+  // 2️⃣ Fallback: YR / MET Norway (väldigt stabil)
+  fetch("https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=59.33&lon=18.06", {
+    headers: { "User-Agent": "weather-screen" }
+  })
+  .then(r => r.json())
+  .then(d => {
+    const now = d.properties.timeseries[0];
+    show(
+      "🌤️",
+      Math.round(now.data.instant.details.air_temperature),
+      Math.round(d.properties.timeseries[0].data.next_6_hours.details.air_temperature_max),
+      Math.round(d.properties.timeseries[0].data.next_6_hours.details.air_temperature_min),
+      "Källa: Yr / MET Norway"
+    );
+  })
+  .catch(() => {
+    document.getElementById("content").innerText =
+      "Väder tillfälligt otillgängligt";
+  });
 });
 
-// Uppdatera automatiskt var 5:e minut
-setInterval(() => location.reload(), 300000);
+// Uppdatera var 10:e minut
+setInterval(() => location.reload(), 600000);
 </script>
 </body>
 </html>
